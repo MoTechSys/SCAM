@@ -3,7 +3,7 @@
  * يتصل بـ Railway Backend API
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://web-production-47834.up.railway.app/api';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://web-production-47834.up.railway.app') + '/api';
 
 // Types
 export interface User {
