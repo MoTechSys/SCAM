@@ -2,6 +2,13 @@ import { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 /**
+ * التحقق من وجود صلاحية 'all' (المدير الأعلى)
+ */
+const hasSuperAdminPermission = (permissions: string[] | undefined): boolean => {
+  return permissions?.includes('all') ?? false;
+};
+
+/**
  * Middleware للتحقق من صلاحية واحدة
  */
 export const requirePermission = (permission: string) => {
@@ -10,6 +17,12 @@ export const requirePermission = (permission: string) => {
 
     if (!user) {
       throw new HTTPException(401, { message: 'غير مصرح - يرجى تسجيل الدخول' });
+    }
+
+    // المدير الأعلى لديه جميع الصلاحيات
+    if (hasSuperAdminPermission(user.permissions)) {
+      await next();
+      return;
     }
 
     if (!user.permissions || !user.permissions.includes(permission)) {
@@ -31,6 +44,12 @@ export const requireAnyPermission = (permissions: string[]) => {
 
     if (!user) {
       throw new HTTPException(401, { message: 'غير مصرح - يرجى تسجيل الدخول' });
+    }
+
+    // المدير الأعلى لديه جميع الصلاحيات
+    if (hasSuperAdminPermission(user.permissions)) {
+      await next();
+      return;
     }
 
     const hasAnyPermission = permissions.some((p) => user.permissions?.includes(p));
@@ -56,6 +75,12 @@ export const requireAllPermissions = (permissions: string[]) => {
       throw new HTTPException(401, { message: 'غير مصرح - يرجى تسجيل الدخول' });
     }
 
+    // المدير الأعلى لديه جميع الصلاحيات
+    if (hasSuperAdminPermission(user.permissions)) {
+      await next();
+      return;
+    }
+
     const hasAllPermissions = permissions.every((p) => user.permissions?.includes(p));
 
     if (!hasAllPermissions) {
@@ -73,6 +98,10 @@ export const requireAllPermissions = (permissions: string[]) => {
  * التحقق من الصلاحية برمجياً (بدون middleware)
  */
 export const hasPermission = (userPermissions: string[] | undefined, permission: string): boolean => {
+  // المدير الأعلى لديه جميع الصلاحيات
+  if (hasSuperAdminPermission(userPermissions)) {
+    return true;
+  }
   return userPermissions?.includes(permission) ?? false;
 };
 
@@ -83,6 +112,10 @@ export const hasAnyPermission = (
   userPermissions: string[] | undefined,
   permissions: string[]
 ): boolean => {
+  // المدير الأعلى لديه جميع الصلاحيات
+  if (hasSuperAdminPermission(userPermissions)) {
+    return true;
+  }
   return permissions.some((p) => userPermissions?.includes(p));
 };
 
