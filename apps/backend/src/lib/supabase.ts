@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+// Use SUPABASE_SERVICE_KEY if available, otherwise fall back to SUPABASE_ANON_KEY
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Only create client if we have valid credentials
+export const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export const STORAGE_BUCKET = 'files';
 
@@ -12,6 +16,11 @@ export async function uploadFile(
   path: string,
   contentType?: string
 ): Promise<{ url: string; path: string } | null> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return null;
+  }
+  
   try {
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -40,6 +49,11 @@ export async function uploadFile(
 }
 
 export async function deleteFile(path: string): Promise<boolean> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return false;
+  }
+  
   try {
     const { error } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -58,6 +72,11 @@ export async function deleteFile(path: string): Promise<boolean> {
 }
 
 export function getPublicUrl(path: string): string {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return '';
+  }
+  
   const { data } = supabase.storage
     .from(STORAGE_BUCKET)
     .getPublicUrl(path);
